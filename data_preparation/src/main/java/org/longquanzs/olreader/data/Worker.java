@@ -27,9 +27,10 @@ import org.springframework.stereotype.Component;
 @Component
 public class Worker {
 	private static final Logger logger = LoggerFactory.getLogger(Worker.class);
-	private String fileName = "C:\\Users\\zj125135\\Desktop\\longquan\\dzz.csv";
-	private String targetDir = "C:\\Users\\zj125135\\Desktop\\longquan\\etl_result\\";
-	private String originScrptureDir = "C:\\Users\\zj125135\\Desktop\\longquan\\dzz\\";
+	private String baseDir = "C:\\Users\\zhoujie\\Downloads\\longquan";
+	private String fileName = baseDir + "\\dzz.csv";
+	private String targetDir = baseDir + "\\etl_result\\";
+	private String originScrptureDir = baseDir + "\\dzz\\";
 	
 	@Autowired
 	private DBOperation dbop;
