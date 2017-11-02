@@ -1,5 +1,7 @@
 package org.longquanzs.olreader.data.model;
 
+import java.util.List;
+
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -18,6 +20,8 @@ public class Scripture {
 	private int rollNum;
 	private int rollBegin;
 	private int rollEnd;
+	//一部经所包含的所有卷
+	private List<String> rollIds;
 	//册号
 	private String bookNo;
 	//页码
@@ -28,6 +32,8 @@ public class Scripture {
 	private String translator;
 	//文件名
 	private String fileName;
+	//序
+	private String preface;
 	public String getWork() {
 		return work;
 	}
@@ -100,5 +106,16 @@ public class Scripture {
 	public void setId(String id) {
 		this.id = id;
 	}
-	
+	public List<String> getRollIds() {
+		return rollIds;
+	}
+	public void setRollIds(List<String> rollIds) {
+		this.rollIds = rollIds;
+	}
+	public String getPreface() {
+		return preface;
+	}
+	public void setPreface(String preface) {
+		this.preface = preface;
+	}
 }
