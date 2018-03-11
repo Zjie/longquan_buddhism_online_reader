@@ -17,85 +17,86 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.lucene.document.Document;
+import org.apache.lucene.document.Field;
+import org.apache.lucene.document.NumericDocValuesField;
+import org.apache.lucene.document.StringField;
+import org.apache.lucene.document.TextField;
+import org.apache.lucene.index.IndexWriter;
 import org.longquanzs.olreader.data.model.Roll;
 import org.longquanzs.olreader.data.model.Scripture;
-import org.longquanzs.olreader.data.model.Tripitaka;
-import org.longquanzs.olreader.data.model.Work;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-//@Component
-public class Worker {
-	private static final Logger logger = LoggerFactory.getLogger(Worker.class);
+@Component
+public class IndexWorker {
+	private static final Logger logger = LoggerFactory.getLogger(IndexWorker.class);
 	
-	@Value("dataPath")
+	@Value("${dataPath}")
 	private String baseDir;
-	private String fileName = baseDir + "\\dzz.csv";
-	private String targetDir = baseDir + "\\etl_result\\";
-	private String originScrptureDir = baseDir + "\\dzz\\";
+	private String originScrptureDir;
+	private String fileName;
+	private String targetDir;
 	
-	/**
 	@Autowired
-	private DBOperation dbop;
-	@Autowired
-	private MongoTemplate template;
-	**/
+	private IndexWriter writer;
+	
 	public int startJob() {
+		fileName = baseDir + "\\dzz.csv";
+		targetDir = baseDir + "\\etl_result\\";
+		originScrptureDir = baseDir + "\\dzz\\";
 		try {
 			File fileDir = new File(fileName);
 			BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(fileDir), "UTF8"));
 			String str;
 			String lastWork = "";
 			BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(targetDir + "no_file.txt"), "UTF8"));
-			//dbop.cleanupDB();
-			Tripitaka tripitaka = new Tripitaka();
-			List<Work> works = new ArrayList<Work>();
-			Work work = null;
+			writer.deleteAll();
+			int docNum = 1;
 			while ((str = in.readLine()) != null) {
 				Scripture s = parseLine(str, lastWork);
 				try {
-					if (s.getFileName() != null) {
-						File file = new File(originScrptureDir + s.getFileName() + ".txt");
-						if (!file.exists()) {
-							out.write(s.getFileName() + "\n");
-						} else {
-							List<Roll> rolls = splitRoll(s);
-							List<String> rollIds = new ArrayList<String>(rolls.size());
-							for (Roll r : rolls) {
-								//template.insert(r);
-								rollIds.add(r.getId());
-								//logger.debug(r.toString());
-							}
-							s.setRollIds(rollIds);
-							if (s.getWork().equals("")) {
-								s.setWork(lastWork);
-								//template.insert(s);
-								work.getScriptureIds().add(s.getId());
-							} else {
-								work = new Work();
-								work.setName(s.getWork());
-								work.setScriptureIds(new ArrayList<String>());
-								//template.insert(s);
-								work.getScriptureIds().add(s.getId());
-								works.add(work);
-							}
-							
-							
+					if (s.getFileName() == null) {
+						continue;
+					}
+					File file = new File(originScrptureDir + s.getFileName() + ".txt");
+					if (!file.exists()) {
+						out.write(s.getFileName() + "\n");
+						continue;
+					}
+					List<Roll> rolls = splitRoll(s);
+					for (Roll r : rolls) {
+						// process each document
+						// work info
+						Document document = new Document();
+						document.add(new StringField("work_name", lastWork , Field.Store.YES));
+						// scripture info
+						document.add(new StringField("scripture_no", s.getSno(), Field.Store.YES));
+						document.add(new StringField("scripture_name", s.getName() , Field.Store.YES));
+						document.add(new StringField("scripture_book_no", s.getBookNo() , Field.Store.YES));
+						document.add(new StringField("scripture_dynasty", s.getDynasty() , Field.Store.YES));
+						document.add(new StringField("scripture_translator", s.getTranslator() , Field.Store.YES));
+						document.add(new TextField("scripture_preface", s.getPreface() == null ? "" : s.getPreface(), Field.Store.YES));
+						// roll info
+						document.add(new NumericDocValuesField("roll_no", r.getNo()));
+						document.add(new StringField("roll_name", r.getName() == null ? "" : r.getName() , Field.Store.YES));
+				        document.add(new TextField("roll_text", r.getText() , Field.Store.YES));
+						//logger.debug(r.toString());
+						writer.addDocument(document);
+						if (docNum % 1000 == 0) {
+							logger.info("processed doc num:" + docNum);
 						}
+						docNum++;
 					}
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
 			}
-			List<String> workIds = new ArrayList<String>();
-			for (Work w : works) {
-				//template.insert(w);
-				workIds.add(w.getId());
-			}
-			tripitaka.setWorkIds(workIds);
-			//template.insert(tripitaka);
+			writer.commit();
+			writer.close();
 			in.close();
 			out.close();
 		} catch (FileNotFoundException e) {

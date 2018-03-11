@@ -6,6 +6,10 @@
 		<version>1.0.0</version>
 		<relativePath>../pom.xml</relativePath>
 	</parent>
+	<properties>
+		<lucene.version>7.2.1</lucene.version>
+	</properties>
+
 	<modelVersion>4.0.0</modelVersion>
 	<artifactId>data_preparation</artifactId>
 	<packaging>jar</packaging>
@@ -16,10 +20,31 @@
 			<artifactId>common</artifactId>
 			<version>1.0.0</version>
 		</dependency>
-		<dependency>
+		<!-- dependency>
 			<groupId>org.longquanzs</groupId>
 			<artifactId>dbservice</artifactId>
 			<version>1.0.0</version>
+		</dependency-->
+
+		<dependency>
+			<groupId>org.apache.lucene</groupId>
+			<artifactId>lucene-core</artifactId>
+			<version>${lucene.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.lucene</groupId>
+			<artifactId>lucene-analyzers-common</artifactId>
+			<version>${lucene.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.lucene</groupId>
+			<artifactId>lucene-queryparser</artifactId>
+			<version>${lucene.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.lucene</groupId>
+			<artifactId>lucene-analyzers-smartcn</artifactId>
+			<version>${lucene.version}</version>
 		</dependency>
 	</dependencies>
 </project>
